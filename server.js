@@ -206,7 +206,7 @@ route('GET', '/api/users', ['manager'], async (req, res) => {
 });
 route('POST', '/api/users', ['manager'], async (req, res, ctx) => {
   const { username, password, name, role } = ctx.body;
-  if (!username || !password || !name || !['manager', 'zavhoz', 'baker', 'expeditor'].includes(role))
+  if (!username || !password || !name || !['manager', 'zavhoz', 'baker', 'expeditor', 'superadmin'].includes(role))
     return sendJSON(res, 400, { error: 'Заполните все поля' });
   if (db.users.find(u => u.username === username)) return sendJSON(res, 400, { error: 'Логин занят' });
   const u = { id: genId(), username, password: hash(password), name, role, active: true };
@@ -225,7 +225,7 @@ route('PUT', '/api/users/:id', ['manager'], async (req, res, ctx) => {
 
 // ===== Сырьё (завхоз ведёт, пекарь видит без цен) =====
 route('GET', '/api/ingredients', ['any'], async (req, res, ctx) => {
-  const showPrices = ctx.user.role === 'zavhoz' || ctx.user.role === 'manager';
+  const showPrices = ['zavhoz','manager','superadmin'].includes(ctx.user.role);
   sendJSON(res, 200, db.ingredients.filter(i => i.active).map(i =>
     showPrices ? i : { id: i.id, name: i.name, unit: i.unit, active: i.active }));
 });
@@ -325,9 +325,9 @@ route('POST', '/api/receipts', ['zavhoz', 'manager'], async (req, res, ctx) => {
 
 // ===== Продукция и цены продажи (менеджер) =====
 route('GET', '/api/products', ['any'], async (req, res, ctx) => {
-  const full = ctx.user.role === 'manager';
+  const full = ctx.user.role === 'manager' || ctx.user.role === 'superadmin';
   sendJSON(res, 200, db.products.filter(p => p.active).map(p => {
-    const base = { id: p.id, name: p.name, code: p.code, sale_price: p.sale_price, active: p.active };
+    const base = { id: p.id, name: p.name, category: p.category || 'Прочее', code: p.code, sale_price: p.sale_price, active: p.active };
     if (full) {
       const cost = productCost(p.id);
       base.cost = cost === null ? null : Math.round(cost * 100) / 100;
@@ -338,11 +338,11 @@ route('GET', '/api/products', ['any'], async (req, res, ctx) => {
   }));
 });
 route('POST', '/api/products', ['manager'], async (req, res, ctx) => {
-  const { name, sale_price } = ctx.body;
+  const { name, sale_price, category } = ctx.body;
   if (!name) return sendJSON(res, 400, { error: 'Укажите название' });
   if (db.products.find(p => p.name.toLowerCase() === name.toLowerCase() && p.active))
     return sendJSON(res, 400, { error: 'Такая позиция уже есть' });
-  const p = { id: genId(), name: name.trim(), code: 'P' + String(nextNumber('product')).padStart(4, '0'), sale_price: Number(sale_price) || 0, active: true };
+  const p = { id: genId(), name: name.trim(), category: (category || 'Прочее').trim() || 'Прочее', code: 'P' + String(nextNumber('product')).padStart(4, '0'), sale_price: Number(sale_price) || 0, active: true };
   db.products.push(p); saveTable('products');
   sendJSON(res, 200, p);
 });
@@ -363,6 +363,7 @@ route('PUT', '/api/products/:id', ['manager'], async (req, res, ctx) => {
   const p = db.products.find(x => x.id === ctx.params.id);
   if (!p) return sendJSON(res, 404, { error: 'Не найдено' });
   if (ctx.body.name) p.name = ctx.body.name.trim();
+  if (ctx.body.category !== undefined) p.category = (ctx.body.category || 'Прочее').trim() || 'Прочее';
   if (typeof ctx.body.active === 'boolean') p.active = ctx.body.active;
   saveTable('products');
   sendJSON(res, 200, { ok: true });
@@ -370,7 +371,7 @@ route('PUT', '/api/products/:id', ['manager'], async (req, res, ctx) => {
 
 // ===== Рецепты (пекарь: без цен; менеджер: с себестоимостью) =====
 route('GET', '/api/recipes', ['any'], async (req, res, ctx) => {
-  const full = ctx.user.role === 'manager';
+  const full = ctx.user.role === 'manager' || ctx.user.role === 'superadmin';
   sendJSON(res, 200, db.recipes.map(r => {
     const out = { id: r.id, name: r.name, product_id: r.product_id || null, is_semifinished: !!r.is_semifinished, output_qty: r.output_qty, items: r.items, author: r.author };
     if (full) out.cost = Math.round(recipeCost(r.id) * 100) / 100;
@@ -402,7 +403,7 @@ route('POST', '/api/recipes', ['baker', 'manager'], async (req, res, ctx) => {
   db.recipes.push(r); saveTable('recipes');
   sendJSON(res, 200, r);
 });
-route('PUT', '/api/recipes/:id', ['baker', 'manager'], async (req, res, ctx) => {
+route('PUT', '/api/recipes/:id', ['superadmin'], async (req, res, ctx) => {
   const r = db.recipes.find(x => x.id === ctx.params.id);
   if (!r) return sendJSON(res, 404, { error: 'Не найден' });
   if (Array.isArray(ctx.body.items)) {
@@ -748,7 +749,7 @@ const server = http.createServer(async (req, res) => {
     if (match.r.roles) {
       ctx.user = getUserFromReq(req);
       if (!ctx.user) return sendJSON(res, 401, { error: 'Требуется вход' });
-      if (!match.r.roles.includes('any') && !match.r.roles.includes(ctx.user.role))
+      if (ctx.user.role !== 'superadmin' && !match.r.roles.includes('any') && !match.r.roles.includes(ctx.user.role))
         return sendJSON(res, 403, { error: 'Нет доступа' });
     }
     try { await match.r.handler(req, res, ctx); }
