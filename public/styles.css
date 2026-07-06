@@ -98,3 +98,16 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
   .compose-line{grid-template-columns:1fr 84px 30px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Рецепты: блоки категорий и дерево состава */
+.cat-block{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.cat-head{padding:12px 14px;font-weight:700;cursor:pointer;background:var(--bg-soft,#f7f2ea);user-select:none}
+.cat-head:hover{background:#f0e8dc}
+.cat-body{padding:4px 14px 10px}
+.rec-item{border-top:1px dashed var(--line);padding:8px 0 4px}
+.rec-head{cursor:pointer;font-weight:600;user-select:none;padding:4px 0}
+.rec-head:hover{color:var(--accent,#b0642a)}
+.rec-body{padding:6px 0 8px 8px}
+.tree-line{font-size:.9rem;padding:3px 0;color:#4a4238}
+.tree-line.pf{color:#7a5a2e}
+.arr{display:inline-block;width:14px;color:var(--accent,#b0642a)}
