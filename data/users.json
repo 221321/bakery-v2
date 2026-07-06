@@ -1,0 +1,34 @@
+[
+  {
+    "id": "b4f34e03132bae63",
+    "username": "manager",
+    "password": "866485796cfa8d7c0cf7111640205b83076433547577511d81f8030ae99ecea5",
+    "name": "Менеджер",
+    "role": "manager",
+    "active": true
+  },
+  {
+    "id": "29bb2bf184e4059b",
+    "username": "zavhoz",
+    "password": "4179691cfb560ac4ff6048398fbda3ac15b357da897a17a4467e8ed0bd1fcc3c",
+    "name": "Завхоз",
+    "role": "zavhoz",
+    "active": true
+  },
+  {
+    "id": "3a7605744159f0ca",
+    "username": "baker1",
+    "password": "df577a632fe2a0bb425a2c27973d8f3804f3ff39da88ebc6597d701e9039406c",
+    "name": "Пекарь Смена 1",
+    "role": "baker",
+    "active": true
+  },
+  {
+    "id": "b7d481be3df9e674",
+    "username": "exp1",
+    "password": "b74aad5af23eaf04ab043d03bf89e2355ee55ddbda8d1612b8e56605835be79e",
+    "name": "Экспедитор 1",
+    "role": "expeditor",
+    "active": true
+  }
+]

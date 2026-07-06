@@ -1,0 +1,82 @@
+[
+  {
+    "id": "67cdb42b943414c4",
+    "name": "Мука в/с",
+    "unit": "кг",
+    "price": 380,
+    "active": true,
+    "created_at": "2026-07-06T10:46:22.334Z"
+  },
+  {
+    "id": "ecb40608ef095174",
+    "name": "Сахар",
+    "unit": "кг",
+    "price": 520,
+    "active": true,
+    "created_at": "2026-07-06T10:46:22.334Z"
+  },
+  {
+    "id": "63bf7aa49fc375f7",
+    "name": "Дрожжи прессованные",
+    "unit": "кг",
+    "price": 1200,
+    "active": true,
+    "created_at": "2026-07-06T10:46:22.334Z"
+  },
+  {
+    "id": "10eb84fd40b3963b",
+    "name": "Молоко 3.2%",
+    "unit": "л",
+    "price": 620,
+    "active": true,
+    "created_at": "2026-07-06T10:46:22.334Z"
+  },
+  {
+    "id": "d2ba5caadb99095a",
+    "name": "Масло сливочное 82%",
+    "unit": "кг",
+    "price": 4800,
+    "active": true,
+    "created_at": "2026-07-06T10:46:22.334Z"
+  },
+  {
+    "id": "673077865748a7fe",
+    "name": "Яйцо куриное",
+    "unit": "шт",
+    "price": 55,
+    "active": true,
+    "created_at": "2026-07-06T10:46:22.334Z"
+  },
+  {
+    "id": "b21625e166955d57",
+    "name": "Соль",
+    "unit": "кг",
+    "price": 150,
+    "active": true,
+    "created_at": "2026-07-06T10:46:22.334Z"
+  },
+  {
+    "id": "2583cee00bc7bee6",
+    "name": "Масло растительное",
+    "unit": "л",
+    "price": 950,
+    "active": true,
+    "created_at": "2026-07-06T10:46:22.334Z"
+  },
+  {
+    "id": "7db7f004f5252d9e",
+    "name": "Крем баварский (основа)",
+    "unit": "кг",
+    "price": 3200,
+    "active": true,
+    "created_at": "2026-07-06T10:46:22.334Z"
+  },
+  {
+    "id": "6a30ce2c982325a8",
+    "name": "Сахарная пудра",
+    "unit": "кг",
+    "price": 780,
+    "active": true,
+    "created_at": "2026-07-06T10:46:22.334Z"
+  }
+]

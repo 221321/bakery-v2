@@ -1,0 +1,37 @@
+[
+  {
+    "id": "90dc4e71640c11df",
+    "name": "Донатс классический",
+    "code": "P0001",
+    "sale_price": 250,
+    "active": true
+  },
+  {
+    "id": "6f36909c4cd29e48",
+    "name": "Донатс баварский крем",
+    "code": "P0002",
+    "sale_price": 350,
+    "active": true
+  },
+  {
+    "id": "6772618e9c2df186",
+    "name": "Берлинер с кремом",
+    "code": "P0003",
+    "sale_price": 400,
+    "active": true
+  },
+  {
+    "id": "c6841632ac762000",
+    "name": "Булочка сдобная",
+    "code": "P0004",
+    "sale_price": 180,
+    "active": true
+  },
+  {
+    "id": "8d447112cff913fd",
+    "name": "Хлеб тостовый",
+    "code": "P0005",
+    "sale_price": 450,
+    "active": true
+  }
+]
