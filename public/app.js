@@ -286,7 +286,10 @@ PAGES.recipes = async function () {
     <button class="btn btn-sm" id="rcAdd">+ строка состава</button>
     <div style="margin-top:14px"><button class="btn btn-primary" id="rcSave">Сохранить рецепт</button> <span class="muted" style="font-size:.84rem">После сохранения изменить рецепт может только суперадмин</span></div>
   </div>
-  <div class="panel"><h2>Рецепты <span class="muted">(${recipes.length})</span></h2><div id="rcList"></div></div>`;
+  <div class="panel"><h2>Незаполненные рецептуры <span class="muted">(${productsFree.length})</span></h2>
+    <p class="muted" style="margin-bottom:8px">Позиции каталога, у которых ещё нет рецепта</p>
+    <div id="rcTodo"></div></div>
+  <div class="panel"><h2>Заполненные рецептуры <span class="muted">(${recipes.length})</span></h2><div id="rcList"></div></div>`;
 
   document.getElementById('rcType').onchange = e => {
     document.getElementById('rcProdBox').style.display = e.target.value === 'product' ? '' : 'none';
@@ -336,6 +339,24 @@ PAGES.recipes = async function () {
       return `<div class="tree-line pf" style="padding-left:${depth * 18}px">▸ <b>${esc(sub.name)}</b> <span class="chip info">ПФ</span> — ${it.qty} (выход рецепта: ${sub.output_qty})</div>` + composeTree(sub, depth + 1);
     }).join('');
   }
+  // --- Незаполненные: каталог без рецептов, по категориям ---
+  const todoGroups = {};
+  for (const p of productsFree) {
+    const cat = p.category || 'Прочее';
+    (todoGroups[cat] = todoGroups[cat] || []).push(p);
+  }
+  const todoCats = Object.keys(todoGroups).sort((a, b) => a.localeCompare(b, 'ru'));
+  document.getElementById('rcTodo').innerHTML = todoCats.map((cat, ci) => `
+    <div class="cat-block todo">
+      <div class="cat-head" data-tcat="${ci}"><span class="arr">▸</span> ${esc(cat)} <span class="chip warn">${todoGroups[cat].length} без рецепта</span></div>
+      <div class="cat-body" id="tcatB${ci}" hidden>
+        ${todoGroups[cat].map(p => `<div class="tree-line">• ${esc(p.name)} <span class="muted">· рецепт не заполнен</span></div>`).join('')}
+      </div>
+    </div>`).join('') || '<span class="chip ok">Все позиции каталога заполнены ✓</span>';
+  document.querySelectorAll('[data-tcat]').forEach(h => h.onclick = () => {
+    const b = document.getElementById('tcatB' + h.dataset.tcat);
+    b.hidden = !b.hidden; h.querySelector('.arr').textContent = b.hidden ? '▸' : '▾';
+  });
   // --- Группировка: категория → позиции ---
   const finished = recipes.filter(r => !r.is_semifinished);
   const groups = {};
