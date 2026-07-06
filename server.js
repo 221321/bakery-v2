@@ -473,6 +473,15 @@ route('POST', '/api/orders', ['manager'], async (req, res, ctx) => {
     doc.total += qty * p.sale_price;
   }
   if (!doc.items.length) return sendJSON(res, 400, { error: 'Нет корректных позиций' });
+  // Жёсткая проверка остатков: доступно = на складе минус резерв открытых заказов
+  const stockNow = stockInfo();
+  for (const it of doc.items) {
+    const s = stockNow.find(x => x.product_id === it.product_id);
+    const avail = s ? s.available : 0;
+    if (it.qty > avail) {
+      return sendJSON(res, 400, { error: `«${it.name}»: доступно ${avail}, запрошено ${it.qty}. Сначала нужен выпуск от пекаря.` });
+    }
+  }
   doc.total = Math.round(doc.total * 100) / 100;
   db.orders.push(doc); saveTable('orders');
   sendJSON(res, 200, orderView(doc));
