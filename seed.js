@@ -44,9 +44,9 @@ if (!exists('ingredients')) {
 
 if (!exists('products')) {
   const prods = [
-    ['Донатс классический', 250], ['Донатс баварский крем', 350], ['Берлинер с кремом', 400],
-    ['Булочка сдобная', 180], ['Хлеб тостовый', 450]
-  ].map(([name, price], i) => ({ id: genId(), name, code: 'P' + String(i + 1).padStart(4, '0'), sale_price: price, active: true }));
+    ['Донатс классический', 250, 'Донатсы'], ['Донатс баварский крем', 350, 'Донатсы'], ['Берлинер с кремом', 400, 'Берлинеры'],
+    ['Булочка сдобная', 180, 'Хлебобулочные'], ['Хлеб тостовый', 450, 'Хлебобулочные']
+  ].map(([name, price, category], i) => ({ id: genId(), name, category, code: 'P' + String(i + 1).padStart(4, '0'), sale_price: price, active: true }));
   write('products', prods);
   const c = read('counters', {});
   c.product = prods.length; write('counters', c);
