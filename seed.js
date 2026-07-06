@@ -1,4 +1,5 @@
-// Идемпотентная инициализация: не перезаписывает существующие данные
+// Идемпотентная инициализация: не перезаписывает существующие данные.
+// Тестовые клиенты ДОЗАЛИВАЮТСЯ в существующий справочник (без дублей по названию).
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -11,6 +12,7 @@ function hash(s) { return crypto.createHash('sha256').update(s).digest('hex'); }
 function genId() { return crypto.randomBytes(8).toString('hex'); }
 function fileOf(t) { return path.join(DATA_DIR, t + '.json'); }
 function exists(t) { return fs.existsSync(fileOf(t)); }
+function read(t, def) { try { return JSON.parse(fs.readFileSync(fileOf(t), 'utf8')); } catch (e) { return def; } }
 function write(t, data) { fs.writeFileSync(fileOf(t), JSON.stringify(data, null, 2), 'utf8'); }
 
 if (!exists('users')) {
@@ -46,18 +48,28 @@ if (!exists('products')) {
     ['Булочка сдобная', 180], ['Хлеб тостовый', 450]
   ].map(([name, price], i) => ({ id: genId(), name, code: 'P' + String(i + 1).padStart(4, '0'), sale_price: price, active: true }));
   write('products', prods);
-  const c = JSON.parse(fs.readFileSync(fileOf('counters'), 'utf8') || '{}');
+  const c = read('counters', {});
   c.product = prods.length; write('counters', c);
   console.log('products: демо-каталог создан');
 } else console.log('products: уже есть, пропуск');
 
-if (!exists('clients')) {
-  write('clients', [
-    { id: genId(), code: 'C0001', name: 'Магазин Айгуль', phone: '+7 701 000 00 01', address: 'мкр. 5, д. 12', active: true },
-    { id: genId(), code: 'C0002', name: 'ИП Береке', phone: '+7 702 000 00 02', address: 'ул. Абая 3', active: true },
-    { id: genId(), code: 'C0003', name: 'ТОО Дастархан', phone: '+7 705 000 00 03', address: 'пр. Мира 41', active: true }
-  ]);
-  console.log('clients: демо-клиенты созданы');
-} else console.log('clients: уже есть, пропуск');
+// --- Клиенты: дозаливка тестовых (работает и на существующей базе, дублей не создаёт) ---
+const TEST_CLIENTS = [
+  { code: 'C0001', name: 'Магазин Айгуль', phone: '+7 701 000 00 01', address: 'мкр. 5, д. 12' },
+  { code: 'C0002', name: 'ИП Береке', phone: '+7 702 000 00 02', address: 'ул. Абая 3' },
+  { code: 'C0003', name: 'ТОО Дастархан', phone: '+7 705 000 00 03', address: 'пр. Мира 41' },
+  { code: 'C0004', name: 'Жети Тандыр', phone: '+7 701 000 00 04', address: 'Актау, 3 мкр' },
+  { code: 'C0005', name: 'Кафе Достык', phone: '+7 701 000 00 05', address: 'Актау, 5 мкр' },
+  { code: 'C0006', name: 'Супермаркет Астыкжан', phone: '+7 701 000 00 06', address: 'Актау, 12 мкр' }
+];
+const clients = read('clients', []);
+let added = 0;
+for (const tc of TEST_CLIENTS) {
+  if (clients.find(c => c.name.toLowerCase() === tc.name.toLowerCase())) continue;
+  clients.push({ id: genId(), ...tc, active: true });
+  added++;
+}
+write('clients', clients);
+console.log('clients: добавлено ' + added + ', всего ' + clients.length);
 
 console.log('Готово.');
