@@ -111,3 +111,4 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .tree-line{font-size:.9rem;padding:3px 0;color:#4a4238}
 .tree-line.pf{color:#7a5a2e}
 .arr{display:inline-block;width:14px;color:var(--accent,#b0642a)}
+.cat-block.todo .cat-head{background:#faf3ec}
