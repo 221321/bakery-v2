@@ -284,7 +284,7 @@ PAGES.recipes = async function () {
     <h3>Состав (граммовки на весь выход)</h3>
     <div id="rcLines"></div>
     <button class="btn btn-sm" id="rcAdd">+ строка состава</button>
-    <div style="margin-top:14px"><button class="btn btn-primary" id="rcSave">Сохранить рецепт</button></div>
+    <div style="margin-top:14px"><button class="btn btn-primary" id="rcSave">Сохранить рецепт</button> <span class="muted" style="font-size:.84rem">После сохранения изменить рецепт может только суперадмин</span></div>
   </div>
   <div class="panel"><h2>Рецепты <span class="muted">(${recipes.length})</span></h2><div id="rcList"></div></div>`;
 
@@ -322,17 +322,63 @@ PAGES.recipes = async function () {
       toast('Рецепт сохранён'); PAGES.recipes();
     } catch (e) { toast(e.message, true); }
   };
-  function refName(it) {
-    if (it.type === 'ingredient') { const g = ings.find(x => x.id === it.ref_id); return g ? `${g.name} — ${it.qty} ${g.unit}` : '?'; }
-    const r = recipes.find(x => x.id === it.ref_id); return r ? `[ПФ] ${r.name} — ${it.qty}` : '?';
+  // --- Дерево состава: рецепт в рецепте, разворачивается вглубь ---
+  function composeTree(recipe, depth) {
+    depth = depth || 0;
+    if (depth > 6) return '';
+    return recipe.items.map(it => {
+      if (it.type === 'ingredient') {
+        const g = ings.find(x => x.id === it.ref_id);
+        return `<div class="tree-line" style="padding-left:${depth * 18}px">• ${esc(g ? g.name : '?')} — <b>${it.qty}</b> ${g ? g.unit : ''}</div>`;
+      }
+      const sub = recipes.find(x => x.id === it.ref_id);
+      if (!sub) return '';
+      return `<div class="tree-line pf" style="padding-left:${depth * 18}px">▸ <b>${esc(sub.name)}</b> <span class="chip info">ПФ</span> — ${it.qty} (выход рецепта: ${sub.output_qty})</div>` + composeTree(sub, depth + 1);
+    }).join('');
   }
-  document.getElementById('rcList').innerHTML = recipes.map(r => `
-    <div class="list-line"><div>
-      <b>${esc(r.name)}</b> ${r.is_semifinished ? '<span class="chip info">полуфабрикат</span>' : ''}
-      <span class="muted">· выход ${r.output_qty}</span>
-      ${withCost && r.cost !== undefined ? `<span class="chip accent">себестоимость ${money(r.cost)} / ${money(r.cost / (r.output_qty || 1))} за ед.</span>` : ''}
-      <div class="muted" style="font-size:.84rem">${r.items.map(refName).map(esc).join(' · ')}</div>
-    </div></div>`).join('') || '<span class="muted">Рецептов пока нет</span>';
+  // --- Группировка: категория → позиции ---
+  const finished = recipes.filter(r => !r.is_semifinished);
+  const groups = {};
+  for (const r of finished) {
+    const p = products.find(x => x.id === r.product_id);
+    const cat = (p && p.category) || 'Прочее';
+    (groups[cat] = groups[cat] || []).push(r);
+  }
+  const catNames = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ru'));
+  let html = catNames.map((cat, ci) => `
+    <div class="cat-block">
+      <div class="cat-head" data-cat="${ci}"><span class="arr">▸</span> ${esc(cat)} <span class="muted">(${groups[cat].length})</span></div>
+      <div class="cat-body" id="catB${ci}" hidden>
+        ${groups[cat].map((r, ri) => `
+          <div class="rec-item">
+            <div class="rec-head" data-rec="${ci}_${ri}"><span class="arr">▸</span> ${esc(r.name)} <span class="muted">· выход ${r.output_qty}</span>
+              ${withCost && r.cost !== undefined ? `<span class="chip accent">себест. ${money(r.cost / (r.output_qty || 1))}/ед.</span>` : ''}</div>
+            <div class="rec-body" id="recB${ci}_${ri}" hidden>${composeTree(r)}</div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+  if (semis.length) {
+    html += `<div class="cat-block">
+      <div class="cat-head" data-cat="pf"><span class="arr">▸</span> Полуфабрикаты <span class="muted">(${semis.length})</span></div>
+      <div class="cat-body" id="catBpf" hidden>
+        ${semis.map((r, ri) => `
+          <div class="rec-item">
+            <div class="rec-head" data-rec="pf_${ri}"><span class="arr">▸</span> ${esc(r.name)} <span class="muted">· выход ${r.output_qty}</span></div>
+            <div class="rec-body" id="recBpf_${ri}" hidden>${composeTree(r)}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }
+  document.getElementById('rcList').innerHTML = html || '<span class="muted">Рецептов пока нет</span>';
+  document.querySelectorAll('.cat-head').forEach(h => h.onclick = () => {
+    const b = document.getElementById('catB' + h.dataset.cat);
+    b.hidden = !b.hidden; h.querySelector('.arr').textContent = b.hidden ? '▸' : '▾';
+  });
+  document.querySelectorAll('.rec-head').forEach(h => h.onclick = e => {
+    e.stopPropagation();
+    const b = document.getElementById('recB' + h.dataset.rec);
+    b.hidden = !b.hidden; h.querySelector('.arr').textContent = b.hidden ? '▸' : '▾';
+  });
 };
 
 // ===== МЕНЕДЖЕР: Цены и маржа =====
@@ -343,6 +389,7 @@ PAGES.prices = async function () {
     <h2>Новая позиция каталога</h2>
     <div class="row">
       <label class="field"><span>Название</span><input id="npName"></label>
+      <label class="field"><span>Категория</span><input id="npCat" list="catList" placeholder="Донатсы / Сэндвичи ..."><datalist id="catList"><option>Донатсы</option><option>Берлинеры</option><option>Пирожные и чизкейки</option><option>Арт-десерты</option><option>Сэндвичи</option><option>Хлебобулочные</option><option>Прочее</option></datalist></label>
       <label class="field"><span>Цена продажи, ₸</span><input id="npPrice" type="number" min="0"></label>
       <button class="btn btn-primary" id="npAdd">Добавить</button>
     </div>
@@ -361,7 +408,7 @@ PAGES.prices = async function () {
     </table></div>
   </div>`;
   document.getElementById('npAdd').onclick = async () => {
-    try { await api('POST', '/api/products', { name: document.getElementById('npName').value, sale_price: document.getElementById('npPrice').value }); toast('Позиция добавлена'); PAGES.prices(); }
+    try { await api('POST', '/api/products', { name: document.getElementById('npName').value, category: document.getElementById('npCat').value, sale_price: document.getElementById('npPrice').value }); toast('Позиция добавлена'); PAGES.prices(); }
     catch (e) { toast(e.message, true); }
   };
   document.querySelectorAll('.sp-save').forEach(b => b.onclick = async () => {
